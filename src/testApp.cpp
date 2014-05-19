@@ -72,15 +72,20 @@ void testApp::update(){
                 int id = simpleHands[i].fingers[j].id;
                 ofPolyline & polyline = fingerTrails[id];
                 ofPoint pt = simpleHands[i].fingers[j].pos;
+                ofPoint vl = simpleHands[i].fingers[j].vel;
                 
-                screenStr += "  Finger " + ofToString(id) + ":: " +
+                screenStr += "  Finger " + ofToString(id) + "    pos: " +
                             ofToString(pt.x, 3) + ","
                             + ofToString(pt.y, 3) + ","
-                            + ofToString(pt.z, 3) +"\n";
+                            + ofToString(pt.z, 3) + "    vel: " 
+                            + ofToString(vl.x, 3) + ","
+                            + ofToString(vl.y, 3) + ","
+                            + ofToString(vl.z, 3) +"\n";
+                
             
            
                 
-                //if the distance between the last point and the current point is too big - lets clear the line 
+                //if the distance between the last point and the current point is too big - lets clear the line
                 //this stops us connecting to an old drawing
                 if( polyline.size() && (pt-polyline[polyline.size()-1] ).length() > 50 ){
                     polyline.clear(); 
@@ -143,21 +148,11 @@ void testApp::update(){
 
 void testApp::sendFeatures(){
     
-    ofxOscMessage p;
     ofxOscMessage m;
     m.setAddress("/oscCustomFeatures");
-    p.setAddress("/oscCustomFeaturesNames");
     
     int numHands = min(2, (int)simpleHands.size()); //ensure no more than 2 hands
 
-    for(int i = 0; i < 2; i++){
-        p.addStringArg("hand_" + ofToString(i,0) + "_posX");
-        p.addStringArg("hand_" + ofToString(i,0) + "_posY");
-        p.addStringArg("hand_" + ofToString(i,0) + "_posZ");
-        p.addStringArg("hand_" + ofToString(i,0) + "_normX");
-        p.addStringArg("hand_" + ofToString(i,0) + "_normY");
-        p.addStringArg("hand_" + ofToString(i,0) + "_normZ");
-    }
     
     for(int i = 0; i < numHands; i++){
         
@@ -170,17 +165,63 @@ void testApp::sendFeatures(){
         m.addFloatArg(simpleHands[i].handNormal.y);
         m.addFloatArg(simpleHands[i].handNormal.z);
         
+         for(int j = 0; j < simpleHands[i].fingers.size(); j++){
+             
+             m.addFloatArg(simpleHands[i].fingers[j].pos.x);
+             m.addFloatArg(simpleHands[i].fingers[j].pos.y);
+             m.addFloatArg(simpleHands[i].fingers[j].pos.z);
+             
+             m.addFloatArg(simpleHands[i].fingers[j].vel.x);
+             m.addFloatArg(simpleHands[i].fingers[j].vel.y);
+             m.addFloatArg(simpleHands[i].fingers[j].vel.z);
+         }
+        
+        for(int j = 0; j < 5 - simpleHands[i].fingers.size(); j++){
+            //fill in blanks for missing fingers
+            for(int k = 0; k < 6; k++)m.addFloatArg(0);
+        }
+        
     }
     
     for(int i = 0; i < 2 - numHands; i++){
         //fill in blanks for the missing hands
         for(int j = 0; j < 6; j++)m.addFloatArg(0);
+        
+        for(int j = 0; j < 5; j++){
+            //fill in blanks for missing fingers
+            for(int k = 0; k < 6; k++)m.addFloatArg(0);
+        }
     }
     
     
     mySender.sendMessage(m);
-    mySender.sendMessage(p);
 
+
+}
+
+void testApp::sendFeatureNames(){
+    ofxOscMessage p;
+    p.setAddress("/oscCustomFeaturesNames");
+    
+    for(int i = 0; i < 2; i++){
+        p.addStringArg("hand_" + ofToString(i,0) + "_posX");
+        p.addStringArg("hand_" + ofToString(i,0) + "_posY");
+        p.addStringArg("hand_" + ofToString(i,0) + "_posZ");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normX");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normY");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normZ");
+        
+        for(int j = 0; j < 5; j++){
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "posX");
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "posY");
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "posZ");
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "velX");
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "velY");
+            p.addStringArg("h" + ofToString(i,0) + "_finger_" + ofToString(j,0) + "velZ");
+        }
+        
+    }
+    mySender.sendMessage(p);
 }
 
 //--------------------------------------------------------------
@@ -234,6 +275,10 @@ void testApp::draw(){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+    
+    if(key == 's'){
+        sendFeatureNames();
+    }
   
 }
 

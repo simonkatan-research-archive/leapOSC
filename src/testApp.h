@@ -12,6 +12,7 @@ class testApp : public ofBaseApp{
     void update();
     void draw();
     void sendFeatures();
+    void sendFeatureNames();
 	
     void keyPressed  (int key);
     void keyReleased(int key);
