@@ -11,8 +11,8 @@ cp -f ../../../addons/ofxLeapMotion/libs/lib/osx/libLeap.dylib "$TARGET_BUILD_DI
 //--------------------------------------------------------------
 void testApp::setup(){
 
-    ofSetFrameRate(60);
-    ofSetVerticalSync(true);
+    ofSetFrameRate(30);
+//    ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_VERBOSE);
     
     mySender.setup("localhost", 6448);
@@ -143,16 +143,29 @@ void testApp::update(){
 
 void testApp::sendFeatures(){
     
+    ofxOscMessage p;
     ofxOscMessage m;
     m.setAddress("/oscCustomFeatures");
+    p.setAddress("/oscCustomFeaturesNames");
+    
     int numHands = min(2, (int)simpleHands.size()); //ensure no more than 2 hands
 
+    for(int i = 0; i < 2; i++){
+        p.addStringArg("hand_" + ofToString(i,0) + "_posX");
+        p.addStringArg("hand_" + ofToString(i,0) + "_posY");
+        p.addStringArg("hand_" + ofToString(i,0) + "_posZ");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normX");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normY");
+        p.addStringArg("hand_" + ofToString(i,0) + "_normZ");
+    }
+    
     for(int i = 0; i < numHands; i++){
         
         //add the actual hand data
         m.addFloatArg(simpleHands[i].handPos.x);
         m.addFloatArg(simpleHands[i].handPos.y);
         m.addFloatArg(simpleHands[i].handPos.z);
+        
         m.addFloatArg(simpleHands[i].handNormal.x);
         m.addFloatArg(simpleHands[i].handNormal.y);
         m.addFloatArg(simpleHands[i].handNormal.z);
@@ -166,6 +179,7 @@ void testApp::sendFeatures(){
     
     
     mySender.sendMessage(m);
+    mySender.sendMessage(p);
 
 }
 
